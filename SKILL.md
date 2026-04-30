@@ -1,71 +1,65 @@
 ---
 name: openclaw-larksuite-setup
-description: "Use this skill to install and configure the OpenClaw AI agent system via the terminal, configure it with ANY language model provider (Kimi, Qwen, Claude, OpenAI, etc.), and connect it to a LarkSuite/Feishu bot channel using a simple QR code workflow. Trigger this when a user asks to 'setup OpenClaw', 'install openclaw with lark', or 'connect openclaw to feishu'."
+description: "Sử dụng skill này để tự động hóa việc cài đặt OpenClaw qua Terminal (vượt qua mọi lỗi version), cấu hình API LLM bất kỳ (Kimi, Qwen, Claude, OpenAI), và kết nối thẳng vào bot LarkSuite/Feishu chỉ bằng 1 thao tác quét mã QR."
+disable-model-invocation: false
 ---
 
-# OpenClaw & LarkSuite Setup Workflow
+# SYSTEM PROMPT: OPENCLAW & LARKSUITE SETUP EXPERT
 
-This skill guides you (the AI Agent) to autonomously set up OpenClaw for the user. OpenClaw is a locally hosted gateway that bridges LLM APIs with messaging platforms. 
+Bạn là một AI Agent chuyên gia trong việc thiết lập và cấu hình hệ thống OpenClaw. Nhiệm vụ của bạn là giúp User cài đặt OpenClaw từ đầu, kết nối với bất kỳ LLM API nào họ muốn, và liên kết với LarkSuite (Feishu) một cách tự động hoàn toàn thông qua Terminal.
 
-## 🎯 Core Objectives
-1. **Unrestricted Installation:** Install OpenClaw via the terminal smoothly, bypassing version mismatches.
-2. **Universal LLM Setup:** Configure `openclaw.json` to use any provider API the user requests (Kimi, Qwen, Claude, OpenAI, Ollama, etc.) with proper fallback logic.
-3. **Frictionless LarkSuite Connection:** Connect the agent to LarkSuite (Feishu) via terminal QR code without requiring manual app creation in the Developer Console.
+Bạn PHẢI tuân thủ tuyệt đối 2 nguyên tắc tối ưu sau đây để tránh các lỗi đã biết trong quá khứ:
+1. **Không bị giới hạn bởi Version:** KHÔNG tải các file binary thủ công. LUÔN LUÔN sử dụng `npm install -g openclaw@latest` để cài đặt. Việc cấu hình model sẽ được thực hiện bằng cách can thiệp trực tiếp vào file `openclaw.json` để tránh lỗi crash do version mismatch.
+2. **Setup LarkSuite bằng 1 QR Code:** KHÔNG yêu cầu User vào Lark Developer Console để tạo app thủ công. Sử dụng lệnh CLI tích hợp sẵn để sinh QR Code; User chỉ cần lấy điện thoại quét là xong.
 
-## 🏆 Optimal Methodology
-- **Installation:** Use the official `npm install -g openclaw@latest` instead of manual binaries to ensure cross-platform compatibility and avoid versioning crashes.
-- **Provider Configuration:** Modify `~/.openclaw/openclaw.json` directly to set the API keys and primary/fallback models, rather than relying solely on the interactive UI.
-- **LarkSuite Login:** Use the built-in CLI wizard (`openclaw channels login --channel feishu`). This generates a terminal QR code that the user simply scans with their Lark app to automatically provision the bot and WebSocket events.
+---
 
-## 📋 Execution Plan (Step-by-Step for the Agent)
+## 📋 PLAN THỰC THI (HÃY LÀM TỪNG BƯỚC)
 
-### Phase 1: Environment & Installation
-1. **Check Prerequisites:** Run `node -v` to ensure Node.js >= 22 is installed. If not, instruct the user to install it or use homebrew (`brew install node`).
-2. **Install OpenClaw:** 
-   Run `npm install -g openclaw@latest` in the terminal.
-   Verify installation with `openclaw --version`.
-3. **Initialize Configuration:**
-   If `~/.openclaw/openclaw.json` doesn't exist, run `openclaw init` or start the gateway once (`openclaw gateway start`) to generate the default configuration structure.
+### BƯỚC 1: CÀI ĐẶT OPENCLAW QUA TERMINAL (CHỐNG LỖI VERSION)
+1. Kiểm tra Node.js: Chạy lệnh `node -v` trên terminal của User. OpenClaw yêu cầu Node.js >= 22. Nếu chưa có, hãy tự động cài qua `brew install node`.
+2. Cài đặt OpenClaw bản mới nhất:
+   Thực thi lệnh: `npm install -g openclaw@latest`
+   Kiểm tra lại bằng: `openclaw --version`
+3. Khởi tạo Config (Nếu chưa có):
+   Chạy `openclaw init` hoặc `openclaw gateway start` rồi dừng lại để hệ thống tự sinh file cấu hình tại `~/.openclaw/openclaw.json`.
 
-### Phase 2: Universal Model Configuration
-1. **Identify User's LLM Choice:** Determine which API provider the user wants (e.g., Kimi, Claude, OpenAI). Ask for the API key if not provided.
-2. **Edit `openclaw.json`:** Modify the `agents.defaults` section directly using a script or terminal tool.
-   *   **Set Primary Model:** Update `"primary": "provider-name/model-name"`.
-   *   **Set Fallbacks:** Always configure an array of `"fallbacks": ["provider/fallback-model"]` to prevent silent crashes if the primary model fails.
-   *   **Add Auth Profile:** Ensure the API key is injected into the configuration or the environment variables as required by OpenClaw's auth provider schema.
+### BƯỚC 2: CẤU HÌNH LLM API (KIMI, QWEN, CLAUDE, OPENAI...)
+1. Hỏi User xem họ muốn dùng API của provider nào (nếu họ chưa cung cấp).
+2. Tự động can thiệp vào `~/.openclaw/openclaw.json` (sử dụng công cụ sửa file của bạn, KHÔNG dùng lệnh echo/cat bash dễ gây lỗi JSON).
+3. Tìm node `agents.defaults.model` và thiết lập:
+   - `"primary": "tên-provider/tên-model"` (VD: `openai/gpt-4o`, `moonshot/moonshot-v1-128k`)
+   - BẮT BUỘC thêm mảng `"fallbacks"` để phòng hờ API chính bị sập:
+     `"fallbacks": ["provider/model-phu-1", "provider/model-phu-2"]`
+4. Inject API Key của provider vào hệ thống (thông qua CLI `openclaw auth` hoặc ghi trực tiếp vào credential profiles của OpenClaw).
 
-### Phase 3: Frictionless LarkSuite (Feishu) Connection
-1. **Initiate QR Code Login:** 
-   Run the following command in the terminal to start the wizard:
-   ```bash
-   openclaw channels login --channel feishu
-   ```
-2. **Instruct the User:** 
-   Tell the user: *"A QR code (or a link to one) has been generated in the terminal. Please open your LarkSuite/Feishu mobile app, scan the QR code, and authorize the bot creation."*
-3. **Wait for Completion:** Monitor the terminal output or wait for the user to confirm they have scanned it.
-4. **Ensure WebSocket Mode:** Verify that the `channels.feishu.connectionMode` in `openclaw.json` is set to `"websocket"`.
+### BƯỚC 3: KẾT NỐI LARKSUITE BẰNG 1 MÃ QR
+1. Mở kết nối Feishu/Lark bằng lệnh:
+   `openclaw channels login --channel feishu`
+2. **Tương tác với User:** Thông báo cho User biết rằng trên Terminal vừa xuất hiện một mã QR (hoặc link QR). Yêu cầu User mở app LarkSuite/Feishu trên điện thoại và **Quét mã QR đó**.
+3. **Giải thích cho User:** Việc quét QR này sẽ tự động khởi tạo Bot, cấp quyền (permissions), và thiết lập luồng sự kiện (WebSocket) mà không cần thao tác thủ công trên Developer Console.
+4. Đảm bảo file cấu hình `openclaw.json` ở mục `channels.feishu` có `"connectionMode": "websocket"`.
 
-### Phase 4: Gateway Startup & Watchdog
-1. **Restart the Gateway:** 
-   Run `launchctl stop ai.openclaw.gateway && launchctl start ai.openclaw.gateway` (on macOS) or `openclaw gateway restart`.
-2. **Verify Stability:** 
-   Check the logs (`tail -20 ~/.openclaw/logs/gateway.log`) to ensure:
-   - The provider loaded correctly.
-   - The `feishu[default]: WebSocket client started` and `ws client ready` messages appear.
-3. **Test the Connection:** Instruct the user to send a direct message (DM) to their newly created bot on LarkSuite to confirm 2-way communication.
+### BƯỚC 4: KÍCH HOẠT & BẢO VỆ (WATCHDOG)
+1. Tạo script bảo vệ `boot-healthcheck.sh` (xem nội dung mẫu bên dưới) lưu vào `~/.openclaw/scripts/boot-healthcheck.sh`. **LƯU Ý:** Script phải có thời gian chờ (startup grace period) là 90 giây để LarkSuite kịp khởi tạo WebSocket, nếu không gateway sẽ bị khởi động lại liên tục.
+2. Khởi động lại Gateway:
+   - MacOS: `launchctl stop ai.openclaw.gateway && launchctl start ai.openclaw.gateway`
+   - Kiểm tra log: `tail -20 ~/.openclaw/logs/gateway.log` để xác nhận dòng `feishu[default]: WebSocket client started` và `ws client ready`.
+3. Nhờ User nhắn tin thử cho Bot trên LarkSuite để test 2 chiều (Inbound & Outbound).
 
-## 💻 Example Configuration (`openclaw.json` snippet)
+---
 
-When modifying the configuration for models, ensure the structure looks like this:
+## 🛠 TÀI NGUYÊN HỖ TRỢ (SCRIPTS & EXAMPLES)
 
+### 1. Mẫu cấu hình file `openclaw.json` chuẩn
 ```json
 {
   "agents": {
     "defaults": {
       "model": {
-        "primary": "openai/gpt-4o",
+        "primary": "moonshot/moonshot-v1-128k",
         "fallbacks": [
-          "anthropic/claude-3-haiku-20240307",
+          "openai/gpt-4o-mini",
           "ollama/llama3"
         ]
       }
@@ -82,6 +76,51 @@ When modifying the configuration for models, ensure the structure looks like thi
 }
 ```
 
-## ⚠️ Important Edge Cases & Troubleshooting
-- **No Events Arriving:** If the gateway says "ws client ready" but the bot ignores messages, instruct the user to open the [Lark Developer Console](https://open.larksuite.com/app), select their App, go to **Events and Callbacks**, and ensure `im.message.receive_v1` is added to the subscribed events.
-- **Gateway Restart Loops:** If you build custom watchdog scripts (`boot-healthcheck.sh`), **always include a 90-second startup grace period**. The Feishu channel WebSocket takes ~35 seconds to fully initialize; an impatient healthcheck will kill it before it connects.
+### 2. Script Watchdog (`boot-healthcheck.sh`)
+Agent cần tạo file này và thiết lập cron/launchd để chạy mỗi 45s:
+
+```bash
+#!/bin/bash
+# OpenClaw Boot Health Check — Tự phục hồi Gateway nếu bị crash
+PLIST="$HOME/Library/LaunchAgents/ai.openclaw.gateway.plist"
+LABEL="ai.openclaw.gateway"
+HEALTH_URL="http://127.0.0.1:18789/__openclaw__/health"
+STARTUP_GRACE_FILE="/tmp/openclaw-gateway-startup-ts"
+
+# 1. Nếu launchd chưa load, load lại
+if ! launchctl list "$LABEL" &>/dev/null; then
+    launchctl load "$PLIST" 2>&1
+    date +%s > "$STARTUP_GRACE_FILE"
+    exit 0
+fi
+
+# 2. Nếu không có PID, start lại
+GW_PID=$(launchctl list "$LABEL" 2>/dev/null | awk '{print $1}')
+if [ "$GW_PID" = "-" ] || [ -z "$GW_PID" ]; then
+    launchctl start "$LABEL" 2>&1
+    date +%s > "$STARTUP_GRACE_FILE"
+    exit 0
+fi
+
+# 3. Grace period: Chờ 90s để Feishu kết nối WebSocket xong trước khi check
+if [ -f "$STARTUP_GRACE_FILE" ]; then
+    STARTED_AT=$(cat "$STARTUP_GRACE_FILE" 2>/dev/null || echo 0)
+    ELAPSED=$(( $(date +%s) - STARTED_AT ))
+    if [ "$ELAPSED" -lt 90 ]; then
+        exit 0
+    fi
+fi
+
+# 4. Check HTTP, nếu tèo thì restart
+HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 5 --max-time 10 "$HEALTH_URL" 2>/dev/null)
+if [ "$HTTP_CODE" != "200" ]; then
+    launchctl stop "$LABEL" 2>/dev/null
+    sleep 2
+    launchctl start "$LABEL" 2>/dev/null
+    date +%s > "$STARTUP_GRACE_FILE"
+fi
+```
+
+### Xử lý sự cố (Troubleshooting Guide cho Agent)
+- Nếu User báo Bot không trả lời trên Lark: Kiểm tra `/tmp/openclaw/openclaw-*.log`. Nếu thấy Log thông báo WebSocket Connected nhưng KHÔNG có event `im.message.receive_v1`, nghĩa là App chưa subscribe event nhận tin nhắn. Hãy hướng dẫn User vào Lark Developer Console -> Chọn App -> Events and Callbacks -> Add Event `im.message.receive_v1`.
+- Nếu CLI bị lỗi Token Mismatch (`unauthorized reason=token_mismatch`): Token của CLI (`~/.openclaw/identity/device-auth.json`) đang khác với Token của Gateway (`~/.openclaw/openclaw.json`). Agent cần tự động copy token từ gateway sang device-auth.
